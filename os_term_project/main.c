@@ -8,10 +8,7 @@
 Process processes[MAX_PROCESS];
 Queue ready_queue;
 Queue waiting_queue;
-Process* running;
 int process_count = 0;  // 프로세스 개수
-int terminated_count = 0;  // 종료된 프로세스 개수
-int timer = 0;  // 현재 시간
 int pid = 1;
 
 int main(){
@@ -86,37 +83,37 @@ int main(){
             case 1:
                 printf("FCFS Scheduling\n");
                 FCFS(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);
+                    processes, process_count);
                 reset_processes(processes, process_count);
                 break;
             case 2:
                 printf("SJF (non-preemptive) Scheduling\n");
                 SJF_non_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);
+                    processes, process_count);
                 reset_processes(processes, process_count);
                 break;
             case 3:
                 printf("SJF (preemptive) Scheduling\n");
                 SJF_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);
+                    processes, process_count);
                 reset_processes(processes, process_count);
                 break;
             case 4:
                 printf("RR Scheduling\n");
                 RR(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);  // time quantum = 2
+                    processes, process_count);  // time quantum = 2
                 reset_processes(processes, process_count);
                 break;
             case 5:
                 printf("Priority (non-preemptive) Scheduling\n");
                 Priority_non_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);
+                    processes, process_count);
                 reset_processes(processes, process_count);
                 break;
             case 6:
                 printf("Priority (preemptive) Scheduling\n");
                 Priority_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count, &running, &terminated_count, &timer);
+                    processes, process_count);
                 reset_processes(processes, process_count);
                 break;
             case 7:

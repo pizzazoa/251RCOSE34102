@@ -2,6 +2,7 @@
 
 void initQueue(Queue* queue, int (*compare)(Process*, Process*)) {
     queue->size = 0;
+    queue->come_time = 0;
     queue->compare = compare;
 }
 
@@ -35,6 +36,7 @@ void heapify(Queue* queue) {
 void enqueue(Queue* queue, Process* process) {
     if (isQueueFull(queue)) {return;}
     
+    process->come_time = queue->come_time++;
     queue->process[queue->size] = process;
     queue->size++;
     heapify(queue);
@@ -85,18 +87,25 @@ void ioOperation(Queue* waiting_queue) {
     }
 }
 
-void config(Queue* ready_queue, Queue* waiting_queue, int (*compare)(Process*, Process*), Process** running, int* terminated_count, int* timer){
+void config(Queue* ready_queue, Queue* waiting_queue, int (*compare)(Process*, Process*)){
     initQueue(ready_queue, compare);
     initQueue(waiting_queue, compare_io_remaining_time);
-    *running = NULL;
-    *terminated_count = 0;
-    *timer = 0;
 }
 
 bool isQueueEmpty(Queue* queue){return queue->size == 0;}
 bool isQueueFull(Queue* queue){return queue->size == MAX_QUEUE_SIZE;}
-int compare_arrival_time(Process* a, Process* b) {return a->arrival_time - b->arrival_time;}    // IO 때문에 못 씀
-int compare_cpu_remaining_time(Process* a, Process* b) {return a->cpu_remaining_time - b->cpu_remaining_time;}  // SJF용
-int compare_priority(Process* a, Process* b) {return a->priority - b->priority;}    // Priority용
-int compare_ready_time(Process* a, Process* b) {return a->ready_time - b->ready_time;}  // FCFS용
+int compare_cpu_remaining_time(Process* a, Process* b) {
+    if (a->cpu_remaining_time == b->cpu_remaining_time) {
+        return a->come_time - b->come_time; // 힙 정렬의 stability 보장
+    }
+    return a->cpu_remaining_time - b->cpu_remaining_time;
+}  // SJF용
+int compare_priority(Process* a, Process* b) {
+    if (a->priority == b->priority) {
+        return a->come_time - b->come_time; // 힙 정렬의 stability 보장
+    }
+    return a->priority - b->priority;
+}    // Priority용
+int compare_ready_time(Process* a, Process* b) {return a->ready_time - b->ready_time;}  // FCFS용(아님)
 int compare_io_remaining_time(Process* a, Process* b) {return a->io_remaining_time - b->io_remaining_time;} // waiting 큐용
+int compare_come_time(Process* a, Process* b) {return a->come_time - b->come_time;} // 이게 진짜 FCFS용

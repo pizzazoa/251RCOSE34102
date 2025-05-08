@@ -25,6 +25,7 @@ typedef struct{
     int turnaround_time;
 
     int ready_time; // Ready Queue에 들어간 시간
+    long long int come_time; // Ready Queue에 들어간 시간
 
     int priority;
 } Process;
