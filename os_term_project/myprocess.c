@@ -35,12 +35,35 @@ Process make_process(int pid){
     return process;
 }
 
-void reset_processes(Process process[], int process_count) {
+void reset_processes(Process processes[], int process_count) {
     for (int i = 0; i < process_count; ++i) {
-        process[i].cpu_remaining_time = process[i].cpu_burst_time;
-        process[i].io_remaining_time  = process[i].io_burst_time;
-        process[i].waiting_time    = 0;
-        process[i].turnaround_time = 0;
+        processes[i].cpu_remaining_time = processes[i].cpu_burst_time;
+        processes[i].io_remaining_time  = processes[i].io_burst_time;
+        processes[i].waiting_time    = 0;
+        processes[i].turnaround_time = 0;
+    }
+}
+
+void print_processes(Process processes[], int process_count) {
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d: arrival_time=%d, cpu_burst_time=%d, I/O @ ticks: ",
+               processes[i].pid, processes[i].arrival_time, processes[i].cpu_burst_time);
+
+        if (processes[i].io_count == 0) {
+            printf("none");
+        } else {
+            bool first = true;
+            for (int t = 0; t < processes[i].cpu_burst_time; ++t) {
+                if (processes[i].io_request_time[t]) {
+                    if (!first) printf(", ");
+                    printf("%d", t);
+                    first = false;
+                }
+            }
+        }
+
+        printf(" | IOburst=%2d | Pri=%d\n",
+               processes[i].io_burst_time, processes[i].priority);
     }
 }
 

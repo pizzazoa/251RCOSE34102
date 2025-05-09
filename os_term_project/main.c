@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include "myscheduler.h"
+#include "myevaluator.h"
 
 
 Process processes[MAX_PROCESS];
@@ -11,124 +12,102 @@ Queue waiting_queue;
 int process_count = 0;  // 프로세스 개수
 int pid = 1;
 
+enum{
+    FCFS_ = 1,
+    SJF_NON_PREEMPTIVE_,
+    SJF_PREEMPTIVE_,
+    RR_,
+    PRIORITY_NON_PREEMPTIVE_,
+    PRIORITY_PREEMPTIVE_,
+    COMPARE_,
+    MAKE_OTHER_PROCESSES_SET_,
+    EXIT_
+};
+
 int main(){
 
     srand(time(NULL));
 
     int choice;
-    // printf("=====CPU SCHEDULING SIMULATOR=====\n");
-    // printf("Enter the number of processes: ");
-    // scanf("%d", &process_count);
-    // if (process_count > MAX_PROCESS) {
-    //     printf("Maximum number of processes is %d\n", MAX_PROCESS);
-    //     process_count = MAX_PROCESS;
-    // }
-
+    printf("=====CPU SCHEDULING SIMULATOR=====\n");
+    printf("Processes are generating...\n");
+    // process_count = (rand() % (MAX_PROCESS + 1)) + 1;  // 1~MAX_PROCESS 사이의 프로세스 개수
     // for (int i = 0; i < process_count; i++) {
     //     processes[i] = make_process(pid++);
-    //     Process *p = &processes[i];
-
-    //     // 기본 정보
-    //     printf("Process %d: arrival_time=%d, cpu_burst_time=%d, io_burst_time=%d, I/O @ ticks: ",
-    //            p->pid, p->arrival_time, p->cpu_burst_time, p->io_burst_time);
-
-    //     // io_request_time 배열 중 true인 인덱스만 출력
-    //     bool any = false;
-    //     for (int t = 0; t < p->cpu_burst_time; t++) {
-    //         if (p->io_request_time && p->io_request_time[t]) {
-    //             if (any) printf(", ");
-    //             printf("%d", t);
-    //             any = true;
-    //         }
-    //     }
-    //     if (!any) {
-    //         printf("none");
-    //     }
-    //     printf("\n");
     // }
+    // print_processes(processes, process_count);
+    // printf("Processes are generated.\n");
 
     process_count = make_dummy_processes(processes);
 
     /* 확인용 출력 */
-    for (int i = 0; i < process_count; ++i) {
-        Process *pr = &processes[i];
-        printf("P%d: AT=%2d | CPU=%2d | I/O @ ticks: ",
-               pr->pid, pr->arrival_time, pr->cpu_burst_time);
-
-        if (pr->io_count == 0) {
-            printf("none");
-        } else {
-            bool first = true;
-            for (int t = 0; t < pr->cpu_burst_time; ++t) {
-                if (pr->io_request_time[t]) {
-                    if (!first) printf(", ");
-                    printf("%d", t);
-                    first = false;
-                }
-            }
-        }
-
-        printf(" | IOburst=%2d | Pri=%d\n",
-               pr->io_burst_time, pr->priority);
-    }
+    print_processes(processes, process_count);
 
     do{
-        printf("1. FCFS\n2. SJF (non-preemptive)\n3. SJF (preemptive)\n4. RR\n"
-            "5. Priority (non-preemptive)\n6. Priority (preemptive)\n7. Compare all\n"
-            "8. make other processes set\n9. Exit\n");
-        printf("Enter the number: ");
+        printf("%d. FCFS\n%d. SJF (non-preemptive)\n%d. SJF (preemptive)\n%d. RR\n"
+            "%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n%d. Compare all\n"
+            "%d. make other processes set\n%d. Exit\n", FCFS_, SJF_NON_PREEMPTIVE_,
+            SJF_PREEMPTIVE_, RR_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
+            COMPARE_, MAKE_OTHER_PROCESSES_SET_, EXIT_);
+        printf("Select Menu: ");
         scanf("%d", &choice);
 
         switch(choice){
-            case 1:
-                printf("FCFS Scheduling\n");
-                FCFS(&ready_queue, &waiting_queue, 
-                    processes, process_count);
-                reset_processes(processes, process_count);
+            case FCFS_:
+                printf("-------------------------\n");
+                FCFS(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
                 break;
-            case 2:
-                printf("SJF (non-preemptive) Scheduling\n");
-                SJF_non_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count);
-                reset_processes(processes, process_count);
+            case SJF_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                SJF_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
                 break;
-            case 3:
-                printf("SJF (preemptive) Scheduling\n");
-                SJF_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count);
-                reset_processes(processes, process_count);
+            case SJF_PREEMPTIVE_:
+                printf("-------------------------\n");
+                SJF_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
                 break;
-            case 4:
-                printf("RR Scheduling\n");
-                RR(&ready_queue, &waiting_queue, 
-                    processes, process_count);  // time quantum = 2
-                reset_processes(processes, process_count);
+            case RR_:
+                printf("-------------------------\n");
+                RR(&ready_queue, &waiting_queue, processes, process_count);  // time quantum = 2
+                evaluator(processes, process_count);                
                 break;
-            case 5:
-                printf("Priority (non-preemptive) Scheduling\n");
-                Priority_non_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count);
-                reset_processes(processes, process_count);
+            case PRIORITY_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                Priority_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
                 break;
-            case 6:
-                printf("Priority (preemptive) Scheduling\n");
-                Priority_preemptive(&ready_queue, &waiting_queue, 
-                    processes, process_count);
-                reset_processes(processes, process_count);
+            case PRIORITY_PREEMPTIVE_:
+                printf("-------------------------\n");
+                Priority_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
                 break;
-            case 7:
+            case COMPARE_:
+                printf("-------------------------\n");
                 printf("Compare all\n");
+                compare_all(&ready_queue, &waiting_queue, processes, process_count);
                 break;
-            case 8:
-                printf("make other process\n");
+            case MAKE_OTHER_PROCESSES_SET_:
+                printf("-------------------------\n");
+                printf("make other process set!\n");
+                printf("Processes are generating...\n");
+                process_count = (rand() % (MAX_PROCESS + 1)) + 1;  // 1~MAX_PROCESS 사이의 프로세스 개수
+                for (int i = 0; i < process_count; i++) {
+                    processes[i] = make_process(pid++);
+                }
+                print_processes(processes, process_count);
+                printf("Processes are generated.\n");
                 break;
-            case 9:
+            case EXIT_:
+                printf("-------------------------\n");
                 printf("Exiting...\n");
                 break;
             default:
+                printf("-------------------------\n");
                 printf("Invalid choice! Please try again.\n");
         }
-    } while(choice != 9);
+    } while(choice != EXIT_);
     
 
     return 0;

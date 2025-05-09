@@ -32,6 +32,7 @@ typedef struct{
 
 Process make_process(int pid);
 void reset_processes(Process processes[], int process_count);
+void print_processes(Process processes[], int process_count);
 int make_dummy_processes(Process processes[]);
 
 #endif

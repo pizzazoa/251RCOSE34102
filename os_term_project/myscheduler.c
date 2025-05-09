@@ -1,6 +1,39 @@
 #include "myscheduler.h"
 
-void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count,  int (*compare)(Process*, Process*)){
+enum {
+    FCFS_ = 1,
+    SJF_NON_PREEMPTIVE_,
+    SJF_PREEMPTIVE_,
+    RR_,
+    PRIORITY_NON_PREEMPTIVE_,
+    PRIORITY_PREEMPTIVE_
+};
+
+void print_scheduler(int flag) {
+    switch(flag){
+        case FCFS_:
+            printf("FCFS\n");
+            break;
+        case SJF_NON_PREEMPTIVE_:
+            printf("SJF (non-preemptive)\n");
+            break;
+        case SJF_PREEMPTIVE_:
+            printf("SJF (preemptive)\n");
+            break;
+        case RR_:
+            printf("RR\n");
+            break;
+        case PRIORITY_NON_PREEMPTIVE_:
+            printf("Priority (non-preemptive)\n");
+            break;
+        case PRIORITY_PREEMPTIVE_:
+            printf("Priority (preemptive)\n");
+            break;
+    }
+}
+
+void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, 
+    int process_count,  int (*compare)(Process*, Process*)){
     config(ready_queue, waiting_queue, compare);
     Process* running = NULL;
     int terminated_count = 0;
@@ -42,7 +75,8 @@ void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes
     }
 }
 
-void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count, int (*compare)(Process*, Process*)){
+void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, 
+    int process_count, int (*compare)(Process*, Process*)){
     config(ready_queue, waiting_queue, compare);
     Process* running = NULL;
     int terminated_count = 0;
@@ -93,26 +127,33 @@ void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, in
 }
 
 void FCFS(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(FCFS_);
     non_preemptive(ready_queue, waiting_queue, processes, process_count, compare_come_time);
 }
 
 void SJF_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(SJF_NON_PREEMPTIVE_);
     non_preemptive(ready_queue, waiting_queue, processes, process_count, compare_cpu_remaining_time);
 }
 
 void SJF_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(SJF_PREEMPTIVE_);
     preemptive(ready_queue, waiting_queue, processes, process_count, compare_cpu_remaining_time);
 }
 
 void Priority_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(PRIORITY_NON_PREEMPTIVE_);
     non_preemptive(ready_queue, waiting_queue, processes, process_count, compare_priority);
 }
 
 void Priority_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(PRIORITY_PREEMPTIVE_);
     preemptive(ready_queue, waiting_queue, processes, process_count, compare_priority);
 }
 
-void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes, 
+    int process_count){
+    print_scheduler(RR_);
     config(ready_queue, waiting_queue, compare_come_time);
     Process* running = NULL;
     int terminated_count = 0;
@@ -162,4 +203,48 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes, int proces
 
         ++timer;
     }
+}
+
+void compare_all(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
+    float min_avg_waiting_time = FLT_MAX;
+    float min_avg_turnaround_time = FLT_MAX;
+    int flag = 0;
+
+    printf("--Find optimal scheduler with WT and TT--\n");
+    printf("-------FCFS-------\n");
+    FCFS(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, FCFS_);
+
+    printf("----SJF (non-preemptive)----\n");
+    SJF_non_preemptive(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, SJF_NON_PREEMPTIVE_);
+    
+    printf("----SJF (preemptive)----\n");
+    SJF_preemptive(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, SJF_PREEMPTIVE_);
+    
+    printf("----RR----\n");
+    RR(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, RR_);
+    
+    printf("----Priority (non-preemptive)----\n");
+    Priority_non_preemptive(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, PRIORITY_NON_PREEMPTIVE_);
+    
+    printf("----Priority (preemptive)----\n");
+    Priority_preemptive(ready_queue, waiting_queue, processes, process_count);
+    evaluator_all(processes, process_count, &min_avg_waiting_time, &min_avg_turnaround_time, 
+        &flag, PRIORITY_PREEMPTIVE_);
+    
+    printf("---------------------------------\n");
+    printf("optimal waiting time: %.2f with ", min_avg_waiting_time);
+    print_scheduler(flag);
+    printf("optimal turnaround time: %.2f with ", min_avg_turnaround_time);
+    print_scheduler(flag);
+    printf("---------------------------------\n");
 }
