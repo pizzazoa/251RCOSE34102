@@ -39,6 +39,11 @@ void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes
     int terminated_count = 0;
     int timer = 0;
 
+    // 간트차트 초기화
+    GanttChart chart;
+    initGanttChart(&chart);
+    int cpu_start_time = -1;
+
     while(terminated_count < process_count){
         updateQueue(ready_queue, waiting_queue, processes, process_count, timer);
 
@@ -46,6 +51,7 @@ void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes
         if (running == NULL && !isQueueEmpty(ready_queue)) {
             running = dequeue(ready_queue);
             running->waiting_time += timer - running->ready_time;
+            cpu_start_time = timer;
         }
 
         // IO 처리
@@ -61,18 +67,21 @@ void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes
                 terminated_count++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
             
             // IO 요청 처리
             else if (running->io_request_time[running->cpu_burst_time - running->cpu_remaining_time]) {
                 enqueue(waiting_queue, running);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
         }
-
         ++timer;
     }
+    // 간트차트 출력
+    printGanttChart(&chart, processes, process_count);
 }
 
 void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, 
@@ -82,6 +91,11 @@ void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes,
     int terminated_count = 0;
     int timer = 0;
 
+    // 간트차트 초기화
+    GanttChart chart;
+    initGanttChart(&chart);
+    int cpu_start_time = -1;
+
     while(terminated_count < process_count){
         updateQueue(ready_queue, waiting_queue, processes, process_count, timer);
 
@@ -90,10 +104,13 @@ void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes,
             if(running == NULL) {
                 running = dequeue(ready_queue);
                 running->waiting_time += timer - running->ready_time;
+                cpu_start_time = timer;
             } else if (compare(running, ready_queue->process[0]) > 0) {
                 Process* temp = running;
+                addBlock(&chart, running->pid, cpu_start_time, timer);
                 running = dequeue(ready_queue);
                 running->waiting_time += timer - running->ready_time;
+                cpu_start_time = timer;
                 temp->ready_time = timer;
                 enqueue(ready_queue, temp);
             }
@@ -112,18 +129,21 @@ void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes,
                 (terminated_count)++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
             
             // IO 요청 처리
             else if (running->io_request_time[running->cpu_burst_time - running->cpu_remaining_time]) {
                 enqueue(waiting_queue, running);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
         }
-
         ++timer;
     }
+    // 간트차트 출력
+    printGanttChart(&chart, processes, process_count);
 }
 
 void FCFS(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
@@ -160,6 +180,11 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes,
     int timer = 0;
     int q = TIME_QUANTUM;
 
+    // 간트차트 초기화
+    GanttChart chart;
+    initGanttChart(&chart);
+    int cpu_start_time = -1;
+
     while(terminated_count < process_count){
         updateQueue(ready_queue, waiting_queue, processes, process_count, timer);
 
@@ -167,6 +192,7 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes,
         if (running != NULL && q == 0) {
             running->ready_time = timer;
             enqueue(ready_queue, running);
+            addBlock(&chart, running->pid, cpu_start_time, timer);
             running = NULL;
         }
 
@@ -175,6 +201,7 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes,
             running = dequeue(ready_queue);
             q = TIME_QUANTUM;
             running->waiting_time += timer - running->ready_time;
+            cpu_start_time = timer;
         }
 
         // IO 처리
@@ -191,18 +218,22 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes,
                 (terminated_count)++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
             
             // IO 요청 처리
             else if (running->io_request_time[running->cpu_burst_time - running->cpu_remaining_time]) {
                 enqueue(waiting_queue, running);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1);
                 running = NULL;
             }
         }
 
         ++timer;
     }
+    // 간트차트 출력
+    printGanttChart(&chart, processes, process_count);
 }
 
 void compare_all(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){

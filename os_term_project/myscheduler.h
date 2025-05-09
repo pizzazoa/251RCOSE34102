@@ -5,6 +5,7 @@
 
 #include "myqueue.h"
 #include "myevaluator.h"
+#include "mygantt.h"
 #include <float.h>
 
 void non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, 
