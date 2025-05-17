@@ -4,33 +4,34 @@ Process make_process(int pid){
     Process process;
 
     process.pid = pid;
-    process.arrival_time = rand() % 30;  // 0~29 사이의 도착 시간
+    process.arrival_time = rand() % 20;  // 0~19 사이의 도착 시간
 
-    process.cpu_burst_time = (rand() % 21) + 5;  // 5~25 사이의 CPU 처리 시간
+    process.cpu_burst_time = (rand() % 16) + 5;  // 5~20 사이의 CPU 처리 시간
     process.cpu_remaining_time = process.cpu_burst_time;
+    process.current_cpu_burst_time = 0;
 
     process.io_count = (rand() % MAX_IO_COUNT + 1);  // 1~5 사이의 I/O 요청 개수
-    process.io_request_time = calloc(process.cpu_burst_time, sizeof(bool));
-    if(process.io_count != 0){
-        process.io_burst_time = (rand() % 8) + 1;  // 1~8 사이의 I/O 처리 시간
-        process.io_remaining_time = process.io_burst_time;
+    process.io_burst_time = calloc(process.cpu_burst_time + 1, sizeof(int));
+    process.io_remaining_time = calloc(process.cpu_burst_time + 1, sizeof(int));
+    process.io_request_time = calloc(process.cpu_burst_time + 1, sizeof(bool));
 
-        int set = 0;
-        while (set < process.io_count) {
-            int idx = (rand() % process.cpu_burst_time - 1) + 1; // 1~cpu_burst_time-1 사이의 인덱스
-            if (!process.io_request_time[idx]) {
-                process.io_request_time[idx] = true;
-                set++;
-            }
+    int set = process.io_count;
+    while(set > 0){
+        int idx = (rand() % process.cpu_burst_time) + 1; // 1~cpu_burst_time 사이의 인덱스
+        if (idx == process.cpu_burst_time) continue;  // 마지막 인덱스는 I/O 요청 불가
+        if (!process.io_request_time[idx]) {
+            process.io_request_time[idx] = true;
+            process.io_burst_time[idx] = (rand() % 8) + 1;  // 1~8 사이의 I/O 처리 시간
+            process.io_remaining_time[idx] = process.io_burst_time[idx];
+            set--;
         }
     }
-    else{
-        process.io_burst_time = 0;
-        process.io_remaining_time = 0;
-    }
+
     process.waiting_time = 0;
     process.turnaround_time = 0;
-    process.priority = (rand() % 15) + 1;  // 1~15 사이의 우선순위
+    process.priority = (rand() % 10) + 1;  // 1~10 사이의 우선순위
+    process.dynamic_priority = process.priority;
+    process.deadline = process.arrival_time + process.cpu_burst_time + process.io_count * 8;
     
     return process;
 }
@@ -38,67 +39,144 @@ Process make_process(int pid){
 void reset_processes(Process processes[], int process_count) {
     for (int i = 0; i < process_count; ++i) {
         processes[i].cpu_remaining_time = processes[i].cpu_burst_time;
-        processes[i].io_remaining_time  = processes[i].io_burst_time;
+        processes[i].current_cpu_burst_time = 0;
         processes[i].waiting_time    = 0;
         processes[i].turnaround_time = 0;
+        processes[i].dynamic_priority = processes[i].priority;
+        for(int j = 0; j < processes[i].cpu_burst_time; j++) {
+            processes[i].io_remaining_time[j] = processes[i].io_burst_time[j];
+        }
+    }
+}
+
+void free_processes(Process processes[], int process_count) {
+    for (int i = 0; i < process_count; ++i) {
+        free(processes[i].io_burst_time);
+        free(processes[i].io_remaining_time);
+        free(processes[i].io_request_time);
     }
 }
 
 void print_processes(Process processes[], int process_count) {
     for (int i = 0; i < process_count; i++) {
-        printf("Process %d: arrival_time=%d, cpu_burst_time=%d, I/O @ ticks: ",
+        printf("Process %d: arrival_time=%d, cpu_burst_time=%d, I/O request/burst: ",
                processes[i].pid, processes[i].arrival_time, processes[i].cpu_burst_time);
 
         if (processes[i].io_count == 0) {
             printf("none");
         } else {
             bool first = true;
-            for (int t = 0; t < processes[i].cpu_burst_time; ++t) {
+            for (int t = 0; t < processes[i].cpu_burst_time; t++) {
                 if (processes[i].io_request_time[t]) {
                     if (!first) printf(", ");
-                    printf("%d", t);
+                    printf("%d/%d", t, processes[i].io_burst_time[t]);
                     first = false;
                 }
             }
         }
 
-        printf(" | IOburst=%2d | Pri=%d\n",
-               processes[i].io_burst_time, processes[i].priority);
+        printf(" | Pri=%d\n", processes[i].priority);
     }
 }
 
 int make_dummy_processes(Process p[]) {
     const int n = 5;
-    int arrival[]   = { 0, 1,  2,  4,  6 };
-    int cpu_burst[] = { 8, 4, 12,  6,  3 };
-    int io_req[]    = { 3, 0,  5,  0,  1 };  // 0이면 I/O 없음
-    int io_burst[]  = { 1, 0,  2,  0,  1 };
-    int priority[]  = { 2, 1,  4,  3,  2 };
 
-    for (int i = 0; i < n; ++i) {
-        p[i].pid                = i + 1;
-        p[i].arrival_time       = arrival[i];
+    p[0].pid = 1;
+    p[0].arrival_time = 0;
+    p[0].cpu_burst_time = 8;
+    p[0].cpu_remaining_time = 8;
+    p[0].current_cpu_burst_time = 0;
+    p[0].io_count = 1;
+    p[0].io_burst_time = calloc(p[0].cpu_burst_time + 1, sizeof(int));
+    p[0].io_remaining_time = calloc(p[0].cpu_burst_time + 1, sizeof(int));
+    p[0].io_request_time = calloc(p[0].cpu_burst_time + 1, sizeof(bool));
+    p[0].io_burst_time[3] = 1;
+    p[0].io_remaining_time[3] = 1;
+    p[0].io_burst_time[5] = 3;
+    p[0].io_remaining_time[5] = 3;
+    p[0].io_request_time[3] = true;  // 3번째 tick에서 I/O 요청
+    p[0].io_request_time[5] = true;  // 5번째 tick에서 I/O 요청
+    p[0].waiting_time = 0;
+    p[0].turnaround_time = 0;
+    p[0].ready_time = 0;
+    p[0].priority = 2;
+    p[0].dynamic_priority = 2;
+    p[0].deadline = 0 + 8 + 1 * 8;
 
-        p[i].cpu_burst_time     = cpu_burst[i];
-        p[i].cpu_remaining_time = cpu_burst[i];
+    p[1].pid = 2;
+    p[1].arrival_time = 1;
+    p[1].cpu_burst_time = 4;
+    p[1].cpu_remaining_time = 4;
+    p[1].current_cpu_burst_time = 0;
+    p[1].io_count = 0;
+    p[1].io_burst_time = calloc(p[1].cpu_burst_time + 1, sizeof(int));
+    p[1].io_remaining_time = calloc(p[1].cpu_burst_time + 1, sizeof(int));
+    p[1].io_request_time = calloc(p[1].cpu_burst_time + 1, sizeof(bool));
+    p[1].waiting_time = 0;
+    p[1].turnaround_time = 0;
+    p[1].ready_time = 0;
+    p[1].priority = 1;
+    p[1].dynamic_priority = 1;
+    p[1].deadline = 1 + 4 + 0 * 8;
 
-        // I/O 이벤트 개수 (io_req[i] > 0 이면 1회, 아니면 0회)
-        p[i].io_count           = io_req[i] > 0 ? 1 : 0;
-        p[i].io_burst_time      = io_burst[i];
-        p[i].io_remaining_time  = io_burst[i];
+    p[2].pid = 3;
+    p[2].arrival_time = 2;
+    p[2].cpu_burst_time = 12;
+    p[2].cpu_remaining_time = 12;
+    p[2].current_cpu_burst_time = 0;
+    p[2].io_count = 1;
+    p[2].io_burst_time = calloc(p[2].cpu_burst_time + 1, sizeof(int));
+    p[2].io_remaining_time = calloc(p[2].cpu_burst_time + 1, sizeof(int));
+    p[2].io_request_time = calloc(p[2].cpu_burst_time + 1, sizeof(bool));
+    p[2].io_burst_time[5] = 2;
+    p[2].io_remaining_time[5] = 2;
+    p[2].io_request_time[5] = true;  // 5번째 tick에서 I/O 요청
+    p[2].waiting_time = 0;
+    p[2].turnaround_time = 0;
+    p[2].ready_time = 0;
+    p[2].priority = 4;
+    p[2].dynamic_priority = 4;
+    p[2].deadline = 2 + 12 + 1 * 8;
 
-        // cpu_burst_time 길이만큼 플래그 배열 할당 & 초기화
-        p[i].io_request_time    = calloc(p[i].cpu_burst_time, sizeof(bool));
-        if (p[i].io_count == 1) {
-            // 지정된 tick에서만 true로 세팅
-            p[i].io_request_time[ io_req[i] ] = true;
-        }
+    p[3].pid = 4;
+    p[3].arrival_time = 4;
+    p[3].cpu_burst_time = 6;
+    p[3].cpu_remaining_time = 6;
+    p[3].current_cpu_burst_time = 0;
+    p[3].io_count = 0;
+    p[3].io_burst_time = calloc(p[3].cpu_burst_time + 1, sizeof(int));
+    p[3].io_remaining_time = calloc(p[3].cpu_burst_time + 1, sizeof(int));
+    p[3].io_request_time = calloc(p[3].cpu_burst_time + 1, sizeof(bool));
+    p[3].waiting_time = 0;
+    p[3].turnaround_time = 0;
+    p[3].ready_time = 0;
+    p[3].priority = 3;
+    p[3].dynamic_priority = 3;
+    p[3].deadline = 4 + 6 + 0 * 8;
 
-        p[i].waiting_time    = 0;
-        p[i].turnaround_time = 0;
-        p[i].ready_time      = 0;
-        p[i].priority        = priority[i];
-    }
+    p[4].pid = 5;
+    p[4].arrival_time = 6;
+    p[4].cpu_burst_time = 3;
+    p[4].cpu_remaining_time = 3;
+    p[4].current_cpu_burst_time = 0;
+    p[4].io_count = 1;
+    p[4].io_burst_time = calloc(p[4].cpu_burst_time + 1, sizeof(int));
+    p[4].io_remaining_time = calloc(p[4].cpu_burst_time + 1, sizeof(int));
+    p[4].io_request_time = calloc(p[4].cpu_burst_time + 1, sizeof(bool));
+    p[4].io_burst_time[1] = 1;
+    p[4].io_remaining_time[1] = 1;
+    p[4].io_burst_time[2] = 3;
+    p[4].io_remaining_time[2] = 3;
+    p[4].io_request_time[1] = true;  // 1번째 tick에서 I/O 요청
+    p[4].io_request_time[2] = true;  // 2번째 tick에서 I/O 요청
+    p[4].waiting_time = 0;
+    p[4].turnaround_time = 0;
+    p[4].ready_time = 0;
+    p[4].priority = 2;
+    p[4].dynamic_priority = 2;
+    p[4].deadline = 6 + 3 + 1 * 8;
+
 
     return n;
 }

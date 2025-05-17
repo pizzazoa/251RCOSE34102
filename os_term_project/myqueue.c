@@ -64,9 +64,8 @@ void updateQueue(Queue* ready_queue, Queue* waiting_queue, Process* processes, i
     // IO 완료된 프로세스
     if (!isQueueEmpty(waiting_queue)) {
         for (int i = 0; i < waiting_queue->size; ) {
-            if(waiting_queue->process[i]->io_remaining_time <= 0) {
+            if(waiting_queue->process[i]->io_remaining_time[waiting_queue->process[i]->current_cpu_burst_time] <= 0) {
                 Process* temp = waiting_queue->process[i];
-                temp->io_remaining_time = temp->io_burst_time;
                 temp->ready_time = timer;
 
                 waiting_queue->process[i] = waiting_queue->process[waiting_queue->size - 1];
@@ -79,10 +78,20 @@ void updateQueue(Queue* ready_queue, Queue* waiting_queue, Process* processes, i
     }
 }
 
+void agingQueue(Queue* ready_queue, int timer) {
+    for (int i = 0; i < ready_queue->size; i++) {
+        // 5초 이상 대기한 프로세스 우선순위 증가
+        if (ready_queue->process[i]->come_time < timer - 5) {
+            ready_queue->process[i]->dynamic_priority--;
+        }
+    }
+    heapify(ready_queue);
+}
+
 void ioOperation(Queue* waiting_queue) {
     if (!isQueueEmpty(waiting_queue)){
         for (int i = 0; i < waiting_queue->size; i++) {
-            waiting_queue->process[i]->io_remaining_time--;
+            waiting_queue->process[i]->io_remaining_time[waiting_queue->process[i]->current_cpu_burst_time]--;
         }
     }
 }
@@ -106,6 +115,17 @@ int compare_priority(Process* a, Process* b) {
     }
     return a->priority - b->priority;
 }    // Priority용
-int compare_ready_time(Process* a, Process* b) {return a->ready_time - b->ready_time;}  // FCFS용(아님)
-int compare_io_remaining_time(Process* a, Process* b) {return a->io_remaining_time - b->io_remaining_time;} // waiting 큐용
 int compare_come_time(Process* a, Process* b) {return a->come_time - b->come_time;} // 이게 진짜 FCFS용
+int compare_io_remaining_time(Process* a, Process* b) {return a->io_remaining_time[a->current_cpu_burst_time] - b->io_remaining_time[b->current_cpu_burst_time];} // waiting 큐용
+int compare_deadline(Process* a, Process* b) {
+    if (a->deadline == b->deadline) {
+        return a->come_time - b->come_time; // 힙 정렬의 stability 보장
+    }
+    return a->deadline - b->deadline;
+}  // Deadline용
+int compare_io_count(Process* a, Process* b) {
+    if (a->io_count == b->io_count) {
+        return a->come_time - b->come_time; // 힙 정렬의 stability 보장
+    }
+    return b->io_count - a->io_count;
+}  // I/O 요청 개수용

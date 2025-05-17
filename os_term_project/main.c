@@ -17,8 +17,14 @@ enum{
     SJF_NON_PREEMPTIVE_,
     SJF_PREEMPTIVE_,
     RR_,
+    RR_Q_,
     PRIORITY_NON_PREEMPTIVE_,
     PRIORITY_PREEMPTIVE_,
+    EDF_NON_PREEMPTIVE_,
+    EDF_PREEMPTIVE_,
+    ICF_NON_PREEMPTIVE_,
+    ICF_PREEMPTIVE_,
+    AGING_PRIORITY_NON_PREEMPTIVE_,
     COMPARE_,
     MAKE_OTHER_PROCESSES_SET_,
     EXIT_
@@ -31,12 +37,6 @@ int main(){
     int choice;
     printf("=====CPU SCHEDULING SIMULATOR=====\n");
     printf("Processes are generating...\n");
-    // process_count = (rand() % (MAX_PROCESS + 1)) + 1;  // 1~MAX_PROCESS 사이의 프로세스 개수
-    // for (int i = 0; i < process_count; i++) {
-    //     processes[i] = make_process(pid++);
-    // }
-    // print_processes(processes, process_count);
-    // printf("Processes are generated.\n");
 
     process_count = make_dummy_processes(processes);
 
@@ -45,9 +45,13 @@ int main(){
 
     do{
         printf("%d. FCFS\n%d. SJF (non-preemptive)\n%d. SJF (preemptive)\n%d. RR\n"
-            "%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n%d. Compare all\n"
+            "%d. RR(custom time quantum)\n%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n"
+            "%d. EDF (non-preemptive)\n%d. EDF (preemptive)\n%d. ICF (non-preemptive)\n%d. ICF (preemptive)\n"
+            "%d. a-priority (non-preemptive)\n%d. Compare all\n"
             "%d. make other processes set\n%d. Exit\n", FCFS_, SJF_NON_PREEMPTIVE_,
-            SJF_PREEMPTIVE_, RR_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
+            SJF_PREEMPTIVE_, RR_, RR_Q_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
+            EDF_NON_PREEMPTIVE_, EDF_PREEMPTIVE_, ICF_NON_PREEMPTIVE_,
+            ICF_PREEMPTIVE_, AGING_PRIORITY_NON_PREEMPTIVE_,
             COMPARE_, MAKE_OTHER_PROCESSES_SET_, EXIT_);
         printf("Select Menu: ");
         scanf("%d", &choice);
@@ -73,6 +77,11 @@ int main(){
                 RR(&ready_queue, &waiting_queue, processes, process_count);  // time quantum = 2
                 evaluator(processes, process_count);                
                 break;
+            case RR_Q_:
+                printf("-------------------------\n");
+                RR_q(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
             case PRIORITY_NON_PREEMPTIVE_:
                 printf("-------------------------\n");
                 Priority_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
@@ -83,6 +92,31 @@ int main(){
                 Priority_preemptive(&ready_queue, &waiting_queue, processes, process_count);
                 evaluator(processes, process_count);                
                 break;
+            case EDF_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                EDF_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
+            case EDF_PREEMPTIVE_:
+                printf("-------------------------\n");
+                EDF_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
+            case ICF_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                IO_count_first_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
+            case ICF_PREEMPTIVE_:
+                printf("-------------------------\n");
+                IO_count_first_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
+            case AGING_PRIORITY_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                aging_priority_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                           
+                break;
             case COMPARE_:
                 printf("-------------------------\n");
                 printf("Compare all\n");
@@ -92,7 +126,9 @@ int main(){
                 printf("-------------------------\n");
                 printf("make other process set!\n");
                 printf("Processes are generating...\n");
-                process_count = (rand() % (MAX_PROCESS + 1)) + 1;  // 1~MAX_PROCESS 사이의 프로세스 개수
+                free_processes(processes, process_count);
+                process_count = (rand() % (MAX_PROCESS)) + 1;  // 1~MAX_PROCESS 사이의 프로세스 개수
+                pid = 1;
                 for (int i = 0; i < process_count; i++) {
                     processes[i] = make_process(pid++);
                 }
@@ -109,6 +145,7 @@ int main(){
         }
     } while(choice != EXIT_);
     
+    free_processes(processes, process_count);
 
     return 0;
 }

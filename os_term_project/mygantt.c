@@ -6,18 +6,33 @@
 
 void initGanttChart(GanttChart* chart) {chart->size = 0;}
 
-void addBlock(GanttChart* chart, int pid, int start_time, int end_time) {
+void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int state_flag) {
     if (chart->size >= MAX_PROCESS * 10) return;
     GanttBlock block;
 
     block.pid = pid;
     block.start_time = start_time;
     block.end_time = end_time;
+    switch(state_flag){
+        case 0:
+            strcpy(block.state, "TERMINATED");
+            break;
+        case 1:
+            strcpy(block.state, "WAITING");
+            break;
+        case 2:
+            strcpy(block.state, "PREEMPTIVED");
+            break;
+        case 3:
+            strcpy(block.state, "TIMEOUT");
+            break;
+    }
+
     
     chart->blocks[chart->size++] = block;
 }
 
-// 간트차트 콘솔 출력
+// 간트차트 출력
 void printGanttChart(GanttChart* chart, Process* processes, int process_count) {
     if (chart->size == 0) {
         printf("Ganttchart is empty.\n");
@@ -41,6 +56,7 @@ void printGanttChart(GanttChart* chart, Process* processes, int process_count) {
         int start_time = block.start_time;
         int end_time = block.end_time;
 
+        // idle 상태일 경우
         if(start_time != 0 && timer < start_time){
             printf("|");
             for(int k = timer; k < start_time; k++){
@@ -85,4 +101,23 @@ void printGanttChart(GanttChart* chart, Process* processes, int process_count) {
         }
     }
     printf("%d\n", last_end_time);
+}
+
+void printGanttLog(GanttChart* chart, Process* processes, int process_count) {
+    if (chart->size == 0) {
+        printf("Ganttchart is empty.\n");
+        return;
+    }
+    
+    printf("===Gantt Log===\n");
+
+    for(int i = 0; i < chart->size; i++) {
+        GanttBlock block = chart->blocks[i];
+        int pid = block.pid;
+        int start_time = block.start_time;
+        int end_time = block.end_time;
+
+        printf("P%d: running from %d to %d -> %s\n", pid, start_time, end_time, block.state);
+    }
+    printf("===End of Gantt Log===\n");
 }

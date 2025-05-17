@@ -21,4 +21,13 @@ void Priority_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* proc
 
 void compare_all(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
 
+void RR_q(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void EDF_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void EDF_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void IO_count_first_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void IO_count_first_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void aging_priority_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+void aging_priority_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count);
+
+
 #endif
