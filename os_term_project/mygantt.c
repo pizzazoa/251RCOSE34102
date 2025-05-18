@@ -7,7 +7,7 @@
 void initGanttChart(GanttChart* chart) {chart->size = 0;}
 
 void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int state_flag) {
-    if (chart->size >= MAX_PROCESS * 10) return;
+    if (chart->size >= MAX_PROCESS * 100) return;
     GanttBlock block;
 
     block.pid = pid;
@@ -21,7 +21,7 @@ void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int stat
             strcpy(block.state, "WAITING");
             break;
         case 2:
-            strcpy(block.state, "PREEMPTIVED");
+            strcpy(block.state, "PREEMPTED");
             break;
         case 3:
             strcpy(block.state, "TIMEOUT");

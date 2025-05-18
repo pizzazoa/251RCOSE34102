@@ -25,6 +25,7 @@ enum{
     ICF_NON_PREEMPTIVE_,
     ICF_PREEMPTIVE_,
     AGING_PRIORITY_NON_PREEMPTIVE_,
+    MLFQ_,
     COMPARE_,
     MAKE_OTHER_PROCESSES_SET_,
     EXIT_
@@ -47,11 +48,11 @@ int main(){
         printf("%d. FCFS\n%d. SJF (non-preemptive)\n%d. SJF (preemptive)\n%d. RR\n"
             "%d. RR(custom time quantum)\n%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n"
             "%d. EDF (non-preemptive)\n%d. EDF (preemptive)\n%d. ICF (non-preemptive)\n%d. ICF (preemptive)\n"
-            "%d. a-priority (non-preemptive)\n%d. Compare all\n"
+            "%d. a-priority (non-preemptive)\n%d. MLFQ\n%d. Compare all\n"
             "%d. make other processes set\n%d. Exit\n", FCFS_, SJF_NON_PREEMPTIVE_,
             SJF_PREEMPTIVE_, RR_, RR_Q_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
             EDF_NON_PREEMPTIVE_, EDF_PREEMPTIVE_, ICF_NON_PREEMPTIVE_,
-            ICF_PREEMPTIVE_, AGING_PRIORITY_NON_PREEMPTIVE_,
+            ICF_PREEMPTIVE_, AGING_PRIORITY_NON_PREEMPTIVE_, MLFQ_,
             COMPARE_, MAKE_OTHER_PROCESSES_SET_, EXIT_);
         printf("Select Menu: ");
         scanf("%d", &choice);
@@ -117,9 +118,14 @@ int main(){
                 aging_priority_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
                 evaluator(processes, process_count);                           
                 break;
+            case MLFQ_:
+                printf("-------------------------\n");
+                MLFQ(&waiting_queue, processes, process_count);
+                evaluator(processes, process_count);                
+                break;
             case COMPARE_:
                 printf("-------------------------\n");
-                printf("Compare all\n");
+                printf("Compare all (find optimal between 1~7 except 5)\n");
                 compare_all(&ready_queue, &waiting_queue, processes, process_count);
                 break;
             case MAKE_OTHER_PROCESSES_SET_:

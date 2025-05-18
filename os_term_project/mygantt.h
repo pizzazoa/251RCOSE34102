@@ -13,7 +13,7 @@ typedef struct {
 } GanttBlock;
 
 typedef struct {
-    GanttBlock blocks[MAX_PROCESS * 10];
+    GanttBlock blocks[MAX_PROCESS * 100];
     int size;
 } GanttChart;
 

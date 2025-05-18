@@ -13,6 +13,7 @@ enum {
     ICF_NON_PREEMPTIVE_,
     ICF_PREEMPTIVE_,
     AGING_PRIORITY_NON_PREEMPTIVE_,
+    MLFQ_,
 };
 
 void print_scheduler(int flag) {
@@ -52,6 +53,9 @@ void print_scheduler(int flag) {
             break;
         case AGING_PRIORITY_NON_PREEMPTIVE_:
             printf("Aging Priority (non-preemptive)\n");
+            break;
+        case MLFQ_:
+            printf("MLFQ\n");
             break;
     }
 }
@@ -156,7 +160,7 @@ void preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes,
             // 프로세스 완료 처리
             if (running->cpu_remaining_time == 0) {
                 running->turnaround_time = timer + 1 - running->arrival_time;
-                (terminated_count)++;
+                terminated_count++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
                 addBlock(&chart, running->pid, cpu_start_time, timer + 1, 0);
@@ -250,7 +254,7 @@ void RR(Queue* ready_queue, Queue* waiting_queue, Process* processes,
             // 프로세스 완료 처리
             if (running->cpu_remaining_time == 0) {
                 running->turnaround_time = timer + 1 - running->arrival_time;
-                (terminated_count)++;
+                terminated_count++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
                 addBlock(&chart, running->pid, cpu_start_time, timer + 1, 0);
@@ -369,7 +373,7 @@ void RR_q(Queue* ready_queue, Queue* waiting_queue, Process* processes, int proc
             // 프로세스 완료 처리
             if (running->cpu_remaining_time == 0) {
                 running->turnaround_time = timer + 1 - running->arrival_time;
-                (terminated_count)++;
+                terminated_count++;
                 printf("process %d, turnaround time: %d, waiting time: %d\n", 
                     running->pid, running->turnaround_time, running->waiting_time);
                 addBlock(&chart, running->pid, cpu_start_time, timer + 1, 0);
@@ -419,7 +423,7 @@ void IO_count_first_preemptive(Queue* ready_queue, Queue* waiting_queue, Process
 
 void aging_priority_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Process* processes, int process_count){
     print_scheduler(AGING_PRIORITY_NON_PREEMPTIVE_);
-    config(ready_queue, waiting_queue, compare_priority);
+    config(ready_queue, waiting_queue, compare_dynamic_priority);
     Process* running = NULL;
     int terminated_count = 0;
     int timer = 0;
@@ -476,3 +480,86 @@ void aging_priority_non_preemptive(Queue* ready_queue, Queue* waiting_queue, Pro
     calculate_cpu_utilization(&chart, process_count);
 }
 
+void MLFQ(Queue* waiting_queue, Process* processes, int process_count){
+    print_scheduler(MLFQ_);
+
+    MultiLevelQueue mlq;
+    initMultiLevelQueue(&mlq);
+    initQueue(waiting_queue, compare_io_remaining_time);
+    Process* running = NULL;
+    int terminated_count = 0;
+    int timer = 0;
+    int q = 0;
+
+    // 간트차트 초기화
+    GanttChart chart;
+    initGanttChart(&chart);
+    int cpu_start_time = -1;
+
+    while(terminated_count < process_count){
+        updateMLQ(&mlq, waiting_queue, processes, process_count, timer);
+
+        // time out 처리
+        if (running != NULL && q == 0) {
+            running->ready_time = timer;
+            running->level = running->level % 3 + 1;
+            enqueue(&mlq.queues[running->level], running);
+            addBlock(&chart, running->pid, cpu_start_time, timer, 3);
+            running = NULL;
+        }
+
+        // Ready Queue에서 프로세스 가져오기
+        if (running == NULL && !isQueueEmpty(&mlq.queues[1])) {
+            running = dequeue(&mlq.queues[1]);
+            q = running->level * 3;
+            running->waiting_time += timer - running->ready_time;
+            cpu_start_time = timer;
+        }
+        else if (running == NULL && !isQueueEmpty(&mlq.queues[2])) {
+            running = dequeue(&mlq.queues[2]);
+            q = running->level * 3;
+            running->waiting_time += timer - running->ready_time;
+            cpu_start_time = timer;
+        }
+        else if (running == NULL && !isQueueEmpty(&mlq.queues[3])) {
+            running = dequeue(&mlq.queues[3]);
+            q = running->level * 3;
+            running->waiting_time += timer - running->ready_time;
+            cpu_start_time = timer;
+        }
+
+        // IO 처리
+        ioOperation(waiting_queue);
+
+        // 프로세스 실행
+        if (running != NULL) {
+            running->cpu_remaining_time--;
+            running->current_cpu_burst_time++;
+            q--;
+
+            // 프로세스 완료 처리
+            if (running->cpu_remaining_time == 0) {
+                running->turnaround_time = timer + 1 - running->arrival_time;
+                terminated_count++;
+                printf("process %d, turnaround time: %d, waiting time: %d\n", 
+                    running->pid, running->turnaround_time, running->waiting_time);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1, 0);
+                running = NULL;
+            }
+            
+            // IO 요청 처리
+            else if (running->io_request_time[running->current_cpu_burst_time]) {
+                enqueue(waiting_queue, running);
+                addBlock(&chart, running->pid, cpu_start_time, timer + 1, 1);
+                running = NULL;
+            }
+        }
+        ++timer;
+    }
+    // 간트차트 출력
+    //printGanttChart(&chart, processes, process_count);
+    // 간트로그 출력
+    printGanttLog(&chart, processes, process_count);
+    // CPU 사용률 계산
+    calculate_cpu_utilization(&chart, process_count);
+}

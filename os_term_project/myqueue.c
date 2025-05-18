@@ -6,6 +6,14 @@ void initQueue(Queue* queue, int (*compare)(Process*, Process*)) {
     queue->compare = compare;
 }
 
+void initMultiLevelQueue(MultiLevelQueue* mlq) {
+    initQueue(&mlq->queues[0], compare_priority);
+    initQueue(&mlq->queues[1], compare_priority);   // 가장 높은 레벨: Priority
+    initQueue(&mlq->queues[2], compare_cpu_remaining_time); // 중간 레벨: SJF
+    initQueue(&mlq->queues[3], compare_come_time);  // 가장 낮은 레벨: FCFS
+    mlq->current_level = 1;
+}
+
 void heapify(Queue* queue) {
     for (int i = queue->size / 2 - 1; i >= 0; i--) {
         int parent = i;
@@ -78,6 +86,44 @@ void updateQueue(Queue* ready_queue, Queue* waiting_queue, Process* processes, i
     }
 }
 
+void updateMLQ(MultiLevelQueue* mlq, Queue* waiting_queue, Process* processes, int process_count, int timer) {
+    // 새로 도착한 프로세스
+    for (int i = 0; i < process_count; i++) {
+        if (processes[i].arrival_time == timer && processes[i].cpu_remaining_time > 0) {
+            processes[i].ready_time = timer;
+            if (processes[i].level == 1) {
+                enqueue(&mlq->queues[1], &processes[i]);
+            } else if (processes[i].level == 2) {
+                enqueue(&mlq->queues[2], &processes[i]);
+            } else if (processes[i].level == 3) {
+                enqueue(&mlq->queues[3], &processes[i]);
+            }
+        }
+    }
+
+    // IO 완료된 프로세스
+    if (!isQueueEmpty(waiting_queue)) {
+        for (int i = 0; i < waiting_queue->size; ) {
+            if(waiting_queue->process[i]->io_remaining_time[waiting_queue->process[i]->current_cpu_burst_time] <= 0) {
+                Process* temp = waiting_queue->process[i];
+                temp->ready_time = timer;
+
+                waiting_queue->process[i] = waiting_queue->process[waiting_queue->size - 1];
+                waiting_queue->size--;
+                if (temp->level == 1) {
+                    enqueue(&mlq->queues[1], temp);
+                } else if (processes[i].level == 2) {
+                    enqueue(&mlq->queues[2], temp);
+                } else if (processes[i].level == 3) {
+                    enqueue(&mlq->queues[3], temp);
+                }
+            }
+            else {i++;}
+        }
+        heapify(waiting_queue);
+    }
+}
+
 void agingQueue(Queue* ready_queue, int timer) {
     for (int i = 0; i < ready_queue->size; i++) {
         // 5초 이상 대기한 프로세스 우선순위 증가
@@ -86,6 +132,35 @@ void agingQueue(Queue* ready_queue, int timer) {
         }
     }
     heapify(ready_queue);
+}
+
+void FeedbackMLQ(MultiLevelQueue* mlq, int timer) {
+    for (int i = 0; i < mlq->queues[2].size; ) {
+        Process* temp = mlq->queues[2].process[i];
+        // 5초 이상 대기한 프로세스 우선순위 증가
+        if (temp->come_time < timer - 5) {
+            temp->level--;
+            enqueue(&mlq->queues[1], temp);
+            mlq->queues[2].process[i] = mlq->queues[2].process[mlq->queues[2].size - 1];
+            mlq->queues[2].size--;
+            heapify(&mlq->queues[2]);
+        } else {
+            i++;
+        }
+    }
+    for (int i = 0; i < mlq->queues[3].size; i++) {
+        Process* temp = mlq->queues[3].process[i];
+        // 5초 이상 대기한 프로세스 우선순위 증가
+        if (temp->come_time < timer - 5) {
+            temp->level--;
+            enqueue(&mlq->queues[2], temp);
+            mlq->queues[3].process[i] = mlq->queues[3].process[mlq->queues[3].size - 1];
+            mlq->queues[3].size--;
+            heapify(&mlq->queues[3]);
+        } else {
+            i++;
+        }
+    }
 }
 
 void ioOperation(Queue* waiting_queue) {
@@ -129,3 +204,9 @@ int compare_io_count(Process* a, Process* b) {
     }
     return b->io_count - a->io_count;
 }  // I/O 요청 개수용
+int compare_dynamic_priority(Process* a, Process* b) {
+    if (a->dynamic_priority == b->dynamic_priority) {
+        return a->come_time - b->come_time; // 힙 정렬의 stability 보장
+    }
+    return a->dynamic_priority - b->dynamic_priority;
+}  // 동적 우선순위용

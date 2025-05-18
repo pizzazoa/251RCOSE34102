@@ -25,12 +25,13 @@ typedef struct{
     int turnaround_time;
 
     int ready_time; // Ready Queue에 들어간 시간
-    long long int come_time; // Ready Queue에 들어간 시간
+    long long int come_time; // Ready Queue에 들어간 순서
     int current_cpu_burst_time; // 현재 CPU burst time
     int deadline;
 
     int priority;
-    int dynamic_priority;
+    int dynamic_priority;   // 동적 우선순위
+    int level; // MLFQ 레벨
 } Process;
 
 Process make_process(int pid);
