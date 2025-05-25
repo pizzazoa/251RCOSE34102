@@ -1,20 +1,5 @@
 #include "myevaluator.h"
 
-enum {
-    FCFS = 1,
-    SJF_NON_PREEMPTIVE,
-    SJF_PREEMPTIVE,
-    RR,
-    RR_Q,
-    PRIORITY_NON_PREEMPTIVE,
-    PRIORITY_PREEMPTIVE,
-    EDF_NON_PREEMPTIVE,
-    EDF_PREEMPTIVE,
-    ICF_NON_PREEMPTIVE,
-    ICF_PREEMPTIVE,
-    AGING_PRIORITY_NON_PREEMPTIVE,
-};
-
 void evaluator(Process* processes, int process_count) {
     int total_waiting_time = 0;
     int total_turnaround_time = 0;

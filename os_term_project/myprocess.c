@@ -14,6 +14,7 @@ Process make_process(int pid){
     process.io_burst_time = calloc(process.cpu_burst_time + 1, sizeof(int));
     process.io_remaining_time = calloc(process.cpu_burst_time + 1, sizeof(int));
     process.io_request_time = calloc(process.cpu_burst_time + 1, sizeof(bool));
+    process.total_io_burst_time = 0;
 
     int set = process.io_count;
     while(set > 0){
@@ -22,16 +23,17 @@ Process make_process(int pid){
         if (!process.io_request_time[idx]) {
             process.io_request_time[idx] = true;
             process.io_burst_time[idx] = (rand() % 8) + 1;  // 1~8 사이의 I/O 처리 시간
+            process.total_io_burst_time += process.io_burst_time[idx];
             process.io_remaining_time[idx] = process.io_burst_time[idx];
             set--;
         }
     }
 
+    process.total_io_remaining_time = process.total_io_burst_time;
     process.waiting_time = 0;
     process.turnaround_time = 0;
     process.priority = (rand() % 10) + 1;  // 1~10 사이의 우선순위
     process.dynamic_priority = process.priority;
-    process.deadline = process.arrival_time + process.cpu_burst_time + process.io_count * 8;
     if(process.io_count > 1) process.level = 1; // I/O 요청이 2개 이상인 경우 레벨 1
     else if(process.cpu_burst_time < 11) process.level = 2; // cpu burst time이 10 이하인 경우 레벨 2
     else process.level = 3;  // MLFQ 레벨 (1~3)
@@ -47,6 +49,7 @@ void reset_processes(Process processes[], int process_count) {
         processes[i].turnaround_time = 0;
         processes[i].dynamic_priority = processes[i].priority;
         processes[i].level = processes[i].priority % 3 + 1;
+        processes[i].total_io_remaining_time = processes[i].total_io_burst_time;
         for(int j = 0; j < processes[i].cpu_burst_time; j++) {
             processes[i].io_remaining_time[j] = processes[i].io_burst_time[j];
         }
@@ -107,7 +110,8 @@ int make_dummy_processes(Process p[]) {
     p[0].priority = 2;
     p[0].dynamic_priority = 2;
     p[0].level = 3;
-    p[0].deadline = 0 + 8 + 1 * 8;
+    p[0].total_io_burst_time = 4;
+    p[0].total_io_remaining_time = 4;
 
     p[1].pid = 2;
     p[1].arrival_time = 1;
@@ -124,7 +128,8 @@ int make_dummy_processes(Process p[]) {
     p[1].priority = 1;
     p[1].dynamic_priority = 1;
     p[1].level = 2;
-    p[1].deadline = 1 + 4 + 0 * 8;
+    p[1].total_io_burst_time = 0;
+    p[1].total_io_remaining_time = 0;
 
     p[2].pid = 3;
     p[2].arrival_time = 2;
@@ -144,7 +149,8 @@ int make_dummy_processes(Process p[]) {
     p[2].priority = 4;
     p[2].dynamic_priority = 4;
     p[2].level = 2;
-    p[2].deadline = 2 + 12 + 1 * 8;
+    p[2].total_io_burst_time = 2;
+    p[2].total_io_remaining_time = 2;
 
     p[3].pid = 4;
     p[3].arrival_time = 4;
@@ -161,7 +167,8 @@ int make_dummy_processes(Process p[]) {
     p[3].priority = 3;
     p[3].dynamic_priority = 3;
     p[3].level = 1;
-    p[3].deadline = 4 + 6 + 0 * 8;
+    p[3].total_io_burst_time = 0;
+    p[3].total_io_remaining_time = 0;
 
     p[4].pid = 5;
     p[4].arrival_time = 6;
@@ -183,8 +190,9 @@ int make_dummy_processes(Process p[]) {
     p[4].ready_time = 0;
     p[4].priority = 2;
     p[4].dynamic_priority = 2;
-    p[4].deadline = 6 + 3 + 1 * 8;
     p[4].level = 3;
+    p[4].total_io_burst_time = 4;
+    p[4].total_io_remaining_time = 4;
 
 
     return n;

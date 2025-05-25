@@ -17,15 +17,16 @@ enum{
     SJF_NON_PREEMPTIVE_,
     SJF_PREEMPTIVE_,
     RR_,
-    RR_Q_,
     PRIORITY_NON_PREEMPTIVE_,
     PRIORITY_PREEMPTIVE_,
-    EDF_NON_PREEMPTIVE_,
-    EDF_PREEMPTIVE_,
     ICF_NON_PREEMPTIVE_,
     ICF_PREEMPTIVE_,
     AGING_PRIORITY_NON_PREEMPTIVE_,
+    MLQ_,
     MLFQ_,
+    LIF_NON_PREEMPTIVE_,
+    LIF_PREEMPTIVE_,
+    HRRN_,
     COMPARE_,
     MAKE_OTHER_PROCESSES_SET_,
     EXIT_
@@ -46,13 +47,14 @@ int main(){
 
     do{
         printf("%d. FCFS\n%d. SJF (non-preemptive)\n%d. SJF (preemptive)\n%d. RR\n"
-            "%d. RR(custom time quantum)\n%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n"
-            "%d. EDF (non-preemptive)\n%d. EDF (preemptive)\n%d. ICF (non-preemptive)\n%d. ICF (preemptive)\n"
-            "%d. a-priority (non-preemptive)\n%d. MLFQ\n%d. Compare all\n"
-            "%d. make other processes set\n%d. Exit\n", FCFS_, SJF_NON_PREEMPTIVE_,
-            SJF_PREEMPTIVE_, RR_, RR_Q_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
-            EDF_NON_PREEMPTIVE_, EDF_PREEMPTIVE_, ICF_NON_PREEMPTIVE_,
-            ICF_PREEMPTIVE_, AGING_PRIORITY_NON_PREEMPTIVE_, MLFQ_,
+            "%d. Priority (non-preemptive)\n%d. Priority (preemptive)\n"
+            "%d. ICF (non-preemptive)\n%d. ICF (preemptive)\n"
+            "%d. a-priority (non-preemptive)\n%d. MLQ\n%d. MLFQ\n"
+            "%d. LIF(non-preemptive)\n%d. LIF(preemptive)\n%d. HRRN\n"
+            "%d. Compare all\n%d. make other processes set\n%d. Exit\n", FCFS_, SJF_NON_PREEMPTIVE_,
+            SJF_PREEMPTIVE_, RR_, PRIORITY_NON_PREEMPTIVE_, PRIORITY_PREEMPTIVE_,
+            ICF_NON_PREEMPTIVE_, ICF_PREEMPTIVE_, AGING_PRIORITY_NON_PREEMPTIVE_, MLQ_, MLFQ_,
+            LIF_NON_PREEMPTIVE_, LIF_PREEMPTIVE_, HRRN_, 
             COMPARE_, MAKE_OTHER_PROCESSES_SET_, EXIT_);
         printf("Select Menu: ");
         scanf("%d", &choice);
@@ -75,12 +77,7 @@ int main(){
                 break;
             case RR_:
                 printf("-------------------------\n");
-                RR(&ready_queue, &waiting_queue, processes, process_count);  // time quantum = 2
-                evaluator(processes, process_count);                
-                break;
-            case RR_Q_:
-                printf("-------------------------\n");
-                RR_q(&ready_queue, &waiting_queue, processes, process_count);
+                RR(&ready_queue, &waiting_queue, processes, process_count);
                 evaluator(processes, process_count);                
                 break;
             case PRIORITY_NON_PREEMPTIVE_:
@@ -91,16 +88,6 @@ int main(){
             case PRIORITY_PREEMPTIVE_:
                 printf("-------------------------\n");
                 Priority_preemptive(&ready_queue, &waiting_queue, processes, process_count);
-                evaluator(processes, process_count);                
-                break;
-            case EDF_NON_PREEMPTIVE_:
-                printf("-------------------------\n");
-                EDF_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
-                evaluator(processes, process_count);                
-                break;
-            case EDF_PREEMPTIVE_:
-                printf("-------------------------\n");
-                EDF_preemptive(&ready_queue, &waiting_queue, processes, process_count);
                 evaluator(processes, process_count);                
                 break;
             case ICF_NON_PREEMPTIVE_:
@@ -118,10 +105,30 @@ int main(){
                 aging_priority_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
                 evaluator(processes, process_count);                           
                 break;
+            case MLQ_:
+                printf("-------------------------\n");
+                MLQ(&waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
+                break;
             case MLFQ_:
                 printf("-------------------------\n");
                 MLFQ(&waiting_queue, processes, process_count);
-                evaluator(processes, process_count);                
+                evaluator(processes, process_count);            
+                break;
+            case LIF_NON_PREEMPTIVE_:
+                printf("-------------------------\n");
+                LIF_non_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
+                break;
+            case LIF_PREEMPTIVE_:
+                printf("-------------------------\n");
+                LIF_preemptive(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
+                break;
+            case HRRN_:
+                printf("-------------------------\n");
+                HRRN(&ready_queue, &waiting_queue, processes, process_count);
+                evaluator(processes, process_count);
                 break;
             case COMPARE_:
                 printf("-------------------------\n");

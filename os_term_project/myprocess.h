@@ -27,7 +27,8 @@ typedef struct{
     int ready_time; // Ready Queue에 들어간 시간
     long long int come_time; // Ready Queue에 들어간 순서
     int current_cpu_burst_time; // 현재 CPU burst time
-    int deadline;
+    int total_io_burst_time; // 총 I/O burst time
+    int total_io_remaining_time; // 총 I/O remaining time
 
     int priority;
     int dynamic_priority;   // 동적 우선순위

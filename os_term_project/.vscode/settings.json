@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdbool.h": "c",
-        "myqueue.h": "c"
+        "myqueue.h": "c",
+        "myscheduler.h": "c"
     }
 }

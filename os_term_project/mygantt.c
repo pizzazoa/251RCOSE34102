@@ -3,36 +3,82 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 void initGanttChart(GanttChart* chart) {chart->size = 0;}
 
-void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int state_flag) {
-    if (chart->size >= MAX_PROCESS * 100) return;
-    GanttBlock block;
+void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int where_flag, int state_flag) {
+    if (chart->size >= MAX_LOG) return;
 
+    GanttBlock block;
     block.pid = pid;
     block.start_time = start_time;
     block.end_time = end_time;
+    switch(where_flag) {
+        case CPU:
+            strcpy(block.where, "CPU");
+            break;
+        case READY_QUEUE:
+            strcpy(block.where, "Ready Queue");
+            break;
+        case WAITING_QUEUE:
+            strcpy(block.where, "Waiting Queue");
+            break;
+        case LEVEL_1_QUEUE:
+            strcpy(block.where, "Level 1 Queue (Priority)");
+            break;
+        case LEVEL_2_QUEUE:
+            strcpy(block.where, "Level 2 Queue (SJF)");
+            break;
+        case LEVEL_3_QUEUE:
+            strcpy(block.where, "Level 3 Queue (FCFS)");
+            break;
+        
+    }
     switch(state_flag){
-        case 0:
+        case ARRIVE:
+            strcpy(block.state, "ARRIVE");
+            break;
+        case TERMINATED:
             strcpy(block.state, "TERMINATED");
             break;
-        case 1:
-            strcpy(block.state, "WAITING");
+        case IO_REQUEST:
+            strcpy(block.state, "IO_REQUEST");
             break;
-        case 2:
+        case PREEMPTED:
             strcpy(block.state, "PREEMPTED");
             break;
-        case 3:
+        case TIMEOUT:
             strcpy(block.state, "TIMEOUT");
+            break;
+        case IO_COMPLETE:
+            strcpy(block.state, "IO_COMPLETE");
             break;
     }
 
-    
     chart->blocks[chart->size++] = block;
 }
 
-// 간트차트 출력
+void printGanttLog(GanttChart* chart, Process* processes, int process_count) {
+    if (chart->size == 0) {
+        printf("Ganttchart is empty.\n");
+        return;
+    }
+    
+    printf("\n=======Gantt Log=======\n");
+
+    for(int i = 0; i < chart->size; i++) {
+        GanttBlock block = chart->blocks[i];
+        int pid = block.pid;
+        int start_time = block.start_time;
+        int end_time = block.end_time;
+        if(start_time == end_time)
+            printf("time [%d]: (%s) P%d -> %s\n", start_time, block.where, pid, block.state);
+        else
+            printf("time [%d~%d]: (%s) P%d -> %s\n", start_time, end_time, block.where, pid, block.state);
+    }
+    printf("=======================\n\n");
+}
+
+// 간트차트 출력 (최대 50초 출력)
 void printGanttChart(GanttChart* chart, Process* processes, int process_count) {
     if (chart->size == 0) {
         printf("Ganttchart is empty.\n");
@@ -101,23 +147,4 @@ void printGanttChart(GanttChart* chart, Process* processes, int process_count) {
         }
     }
     printf("%d\n", last_end_time);
-}
-
-void printGanttLog(GanttChart* chart, Process* processes, int process_count) {
-    if (chart->size == 0) {
-        printf("Ganttchart is empty.\n");
-        return;
-    }
-    
-    printf("===Gantt Log===\n");
-
-    for(int i = 0; i < chart->size; i++) {
-        GanttBlock block = chart->blocks[i];
-        int pid = block.pid;
-        int start_time = block.start_time;
-        int end_time = block.end_time;
-
-        printf("P%d: running from %d to %d -> %s\n", pid, start_time, end_time, block.state);
-    }
-    printf("===End of Gantt Log===\n");
 }
