@@ -1,4 +1,5 @@
 #include "myevaluator.h"
+#include <string.h>
 
 void evaluator(Process* processes, int process_count) {
     int total_waiting_time = 0;
@@ -54,15 +55,17 @@ void calculate_cpu_utilization(GanttChart* chart, int process_count) {
     if (chart->size == 0) return;
     
     int total_time = chart->blocks[chart->size - 1].end_time;
-    int idle_time = 0;
+    int busy_time = 0;
     
-    // 간트차트에서 idle 시간 계산
-    for (int i = 0; i < chart->size - 1; i++) {
-        if (chart->blocks[i].end_time < chart->blocks[i + 1].start_time) {
-            idle_time += chart->blocks[i + 1].start_time - chart->blocks[i].end_time;
+    // 간트차트에서 cpu burst time만 계산
+    for (int i = 0; i < chart->size; i++) {
+        if(strcmp(chart->blocks[i].where, "CPU") == 0){
+            if (chart->blocks[i].start_time < chart->blocks[i].end_time) {
+                busy_time += chart->blocks[i].end_time - chart->blocks[i].start_time;
+            }
         }
     }
     
-    float utilization = ((float)(total_time - idle_time) / total_time) * 100;
+    float utilization = ((float)busy_time / total_time) * 100;
     printf("CPU Utilization: %.2f%%\n", utilization);
 }
