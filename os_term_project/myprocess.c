@@ -82,7 +82,7 @@ void print_processes(Process processes[], int process_count) {
             }
         }
 
-        printf(" | Pri=%d | level=%d\n", processes[i].priority, processes[i].level);
+        printf(" , Pri=%d , level=%d\n", processes[i].priority, processes[i].level);
     }
 }
 

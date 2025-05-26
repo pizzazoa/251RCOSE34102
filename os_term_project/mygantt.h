@@ -37,16 +37,9 @@ typedef struct {
     int size;
 } GanttChart;
 
-// 간트차트 초기화
 void initGanttChart(GanttChart* chart);
-
-// 새로운 간트블록 추가
 void addBlock(GanttChart* chart, int pid, int start_time, int end_time, int where_flag, int state_flag);
-
-// 간트차트 로그 출력
 void printGanttLog(GanttChart* chart, Process* processes, int process_count);
-
-// 간트차트 출력
 void printGanttChart(GanttChart* chart, Process* processes, int process_count);
 
 #endif
